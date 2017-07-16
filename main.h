@@ -20,7 +20,7 @@
 #define APP_NAME gwu66
 #define APP_NAME_STR TOSTRING(APP_NAME)
 #define ID_BROADCAST 0xff
-#define RETRY_NUM 5
+//#define RETRY_NUM 5
 
 #ifdef MODE_FULL
 #define CONF_DIR "/etc/controller/" APP_NAME_STR "/"

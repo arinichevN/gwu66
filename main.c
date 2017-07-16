@@ -18,6 +18,9 @@ DeviceList device_list = {NULL, 0};
 
 I1List i1l = {NULL, 0};
 
+struct timespec interval = {.tv_sec = 0, .tv_nsec = 200000000};
+Ton_ts tmr = {.ready = 0};
+
 #include "util.c"
 #include "print.c"
 #include "init_f.c"
@@ -48,11 +51,49 @@ int checkDevice(DeviceList *dl) {
         }
     }
 #endif
+    //same sclk
+    /*
+        int pin, f;
+        f = 0;
+        for (i = 0; i < dl->length; i++) {
+            if (!f) {
+                pin = dl->item[i].sclk;
+                f = 1;
+            }
+            if (pin != dl->item[i].sclk) {
+                fprintf(stderr, "checkDevice: the same sclk pin expected where id=%d\n", dl->item[i].id);
+                return 0;
+            }
+        }
+        //same miso
+        f = 0;
+        for (i = 0; i < dl->length; i++) {
+            if (!f) {
+                pin = dl->item[i].miso;
+                f = 1;
+            }
+            if (pin != dl->item[i].miso) {
+                fprintf(stderr, "checkDevice: the same cs pin expected where id=%d\n", dl->item[i].id);
+                return 0;
+            }
+        }
+     */
+    //unique cs
+    /*
+        for (i = 0; i < dl->length; i++) {
+            for (j = i + 1; j < dl->length; j++) {
+                if (dl->item[i].cs == dl->item[j].cs) {
+                    fprintf(stderr, "checkDevice: check device table: cs should be unique, repetition found where id=%d\n", dl->item[i].id);
+                    return 0;
+                }
+            }
+        }
+     */
     //unique id
     for (i = 0; i < dl->length; i++) {
         for (j = i + 1; j < dl->length; j++) {
             if (dl->item[i].id == dl->item[j].id) {
-                fprintf(stderr, "checkDevice: check device table: ids should be unique, repetition found where id=%d and app_class='%s'\n", dl->item[i].id, app_class);
+                fprintf(stderr, "checkDevice: check device table: ids should be unique, repetition found where id=%d\n", dl->item[i].id);
                 return 0;
             }
         }
@@ -140,13 +181,13 @@ void serverRun(int *state, int init_state) {
         default:
             return;
     }
-
     switch (buf_in[1]) {
         case ACP_CMD_GET_FTS:
+            // getTemperature(&device_list, interval, &tmr);
             switch (buf_in[0]) {
                 case ACP_QUANTIFIER_BROADCAST:
                     for (i = 0; i < device_list.length; i++) {
-                        getTemperature(&device_list.item[i]);
+                        getTemperature1(&device_list.item[i]);
                         if (!catFTS(&device_list.item[i], buf_out, sock_buf_size)) {
                             return;
                         }
@@ -156,7 +197,7 @@ void serverRun(int *state, int init_state) {
                     for (i = 0; i < i1l.length; i++) {
                         Device *device = getDeviceById(i1l.item[i], &device_list);
                         if (device != NULL) {
-                            getTemperature(device);
+                            getTemperature1(device);
                             if (!catFTS(device, buf_out, sock_buf_size)) {
                                 return;
                             }
@@ -166,12 +207,10 @@ void serverRun(int *state, int init_state) {
             }
             break;
     }
-
     switch (buf_in[1]) {
         case ACP_CMD_GET_FTS:
             if (!sendBufPack(buf_out, ACP_QUANTIFIER_SPECIFIC, ACP_RESP_REQUEST_SUCCEEDED)) {
                 sendStrPack(ACP_QUANTIFIER_BROADCAST, ACP_RESP_BUF_OVERFLOW);
-
                 return;
             }
             return;
@@ -219,11 +258,22 @@ int initData() {
         return 0;
     }
 #ifndef PLATFORM_ANY
-    size_t i;
+    /*
+        size_t i;
+        int miso[device_list.length];
+        for (i = 0; i < device_list.length; i++) {
+            miso[i] = device_list.item[i].miso;
+        }
+        max6675_so_init(device_list.item[0].sclk, device_list.item[0].cs, miso, (int) device_list.length);
+     */
+
+    int i;
     for (i = 0; i < device_list.length; i++) {
         max6675_init(device_list.item[i].sclk, device_list.item[i].cs, device_list.item[i].miso);
     }
+
 #endif
+    tmr.ready = 0;
     return 1;
 }
 
@@ -269,9 +319,9 @@ int main(int argc, char** argv) {
     if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1) {
         perror("main: memory locking failed");
     }
-#ifndef MODE_DEBUG
+    //#ifndef MODE_DEBUG
     setPriorityMax(SCHED_FIFO);
-#endif
+    //#endif
     int data_initialized = 0;
     while (1) {
         switch (app_state) {

@@ -1,5 +1,7 @@
 
 UDP шлюз для MAX6675
+По запросу клиента читает температуру с датчика и передает этому клиенту результат.
+Количество подключаемых датчиков не ограничивается программой.
 
 1 Установка
 1.1 Требования
@@ -21,7 +23,11 @@ sudo ./build.sh part_debug
 2 Настройка базы данных
 Данные извлекаются из файлов DEVICE_FILE и CONFIG_FILE из main.h.
 Формат CONFIG_FILE:
- port\tpid_path\tsock_buf_size
+ Port\tPidPath\tSocketBufferSize\tRetryCount
+ где
+ Port - порт (должен быть уникальным в рамках хоста);
+ PidPath - путь к файлу блокировки;
+ SocketBufferSize - максимальный размер пакета, передаваемого по сети.
 Формат DEVICE_FILE:
  id\tsclk_pin\tmiso_pin\tcs_pin
 

@@ -10,6 +10,8 @@ int readSettings() {
     }
 
     int n;
+    char s[LINE_SIZE];
+    fgets(s, LINE_SIZE, stream);
     n = fscanf(stream, "%d\t%255s\t%d\t", &sock_port, pid_path, &sock_buf_size);
     if (n != 3) {
         fclose(stream);
@@ -36,6 +38,8 @@ int initDevice(DeviceList *list) {
 #endif
         return 0;
     }
+    char s[LINE_SIZE];
+    fgets(s, LINE_SIZE, stream);
     int rnum = 0;
     while (1) {
         int n = 0, x1, x2, x3, x4;
@@ -58,6 +62,7 @@ int initDevice(DeviceList *list) {
             fclose(stream);
             return 0;
         }
+        fgets(s, LINE_SIZE, stream);
         int done = 1;
         size_t i;
         FORL{
