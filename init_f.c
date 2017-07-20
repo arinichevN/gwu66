@@ -4,7 +4,7 @@ int readSettings() {
     FILE* stream = fopen(CONFIG_FILE, "r");
     if (stream == NULL) {
 #ifdef MODE_DEBUG
-        fputs("ERROR: readSettings: fopen", stderr);
+        fputs("ERROR: readSettings: fopen\n", stderr);
 #endif
         return 0;
     }
@@ -16,13 +16,13 @@ int readSettings() {
     if (n != 3) {
         fclose(stream);
 #ifdef MODE_DEBUG
-        fputs("ERROR: readSettings: bad row format", stderr);
+        fputs("ERROR: readSettings: bad row format\n", stderr);
 #endif
         return 0;
     }
     fclose(stream);
 #ifdef MODE_DEBUG
-    printf("readSettings: sock_port: %d, pid_path: %s, sock_buf_size: %d\n", sock_port, pid_path, sock_buf_size);
+    printf("readSettings: \n\tsock_port: %d, \n\tpid_path: %s, \n\tsock_buf_size: %d\n", sock_port, pid_path, sock_buf_size);
 #endif
     return 1;
 }
@@ -34,7 +34,7 @@ int initDevice(DeviceList *list) {
     FILE* stream = fopen(DEVICE_FILE, "r");
     if (stream == NULL) {
 #ifdef MODE_DEBUG
-        fputs("ERROR: initDevice: fopen", stderr);
+        fputs("ERROR: initDevice: fopen\n", stderr);
 #endif
         return 0;
     }
@@ -65,6 +65,9 @@ int initDevice(DeviceList *list) {
         fgets(s, LINE_SIZE, stream);
         int done = 1;
         size_t i;
+#ifdef MODE_DEBUG
+        puts("initDevice: read:");
+#endif
         FORL{
             int n;
             n = fscanf(stream, DEVICE_ROW_FORMAT,
@@ -77,7 +80,7 @@ int initDevice(DeviceList *list) {
                 done = 0;
             }
 #ifdef MODE_DEBUG
-            printf("initDevice: read: id = %d, sclk = %d, cs = %d, miso = %d\n", LIi.id, LIi.sclk, LIi.cs, LIi.miso);
+            printf("\tid = %d, sclk = %d, cs = %d, miso = %d\n", LIi.id, LIi.sclk, LIi.cs, LIi.miso);
 #endif
             LIi.value_state = 0;
         }

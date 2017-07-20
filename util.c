@@ -19,7 +19,7 @@ int deviceIdExists(int id) {
     return 1;
 }
 
-void getTemperature1(Device *item) {
+void getTemperature(Device *item) {
     //item->value_state = 0;
 #ifndef PLATFORM_ANY
     printf("reading: id:%d sclk:%d cs:%d so:%d\n", item->id, item->sclk, item->cs, item->miso);
@@ -35,65 +35,6 @@ void getTemperature1(Device *item) {
     item->tm = getCurrentTime();
     item->value_state = 1;
     return;
-#endif
-}
-
-void getTemperature(DeviceList *list, struct timespec interval, Ton_ts *tmr) {
-    //item->value_state = 0;
-#ifndef PLATFORM_ANY
-    // printf("reading: id:%d sclk:%d cs:%d so:%d\n", item->id, item->sclk, item->cs, item->miso);
-    /*
-            if (max6675_read(&item->value, item->sclk, item->cs, item->miso)) {
-                item->tm = getCurrentTime();
-                item->value_state = 1;
-                return;
-            }
-     */
-    if (list->length <= 0) {
-#ifdef MODE_DEBUG
-        fputs("getTemperature: nothing to do\n", stderr);
-#endif
-        return;
-    }
-
-    /*
-        if (!ton_ts(interval, tmr)) {
-    #ifdef MODE_DEBUG
-            fputs("getTemperature: data not ready yet\n", stderr);
-    #endif
-            return;
-        }
-     */
-
-    MAX6675Data d[list->length];
-    MAX6675DataList dl = {.item = d};
-    dl.length = list->length;
-    size_t i;
-    FORL{
-        dl.item[i].miso = LIi.miso;
-    }
-    max6675_so_read(&dl, list->item[0].sclk, list->item[0].cs);
-    struct timespec now = getCurrentTime();
-    FORL{
-        LIi.value = dl.item[i].value;
-        LIi.value_state = dl.item[i].state;
-        LIi.tm = now;
-    }
-#endif
-#ifdef PLATFORM_ANY
-    size_t i;
-    struct timespec now = getCurrentTime();
-    FORL{
-        LIi.value = 0.0f;
-        LIi.value_state = 1;
-        LIi.tm = now;
-    }
-    /*
-        item->value = 0.0f;
-        item->tm = getCurrentTime();
-        item->value_state = 1;
-        return;
-     */
 #endif
 }
 

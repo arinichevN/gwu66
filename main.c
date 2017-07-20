@@ -4,7 +4,6 @@
 
 #include "main.h"
 
-char app_class[NAME_SIZE];
 char pid_path[LINE_SIZE];
 int app_state = APP_INIT;
 int pid_file = -1;
@@ -183,11 +182,10 @@ void serverRun(int *state, int init_state) {
     }
     switch (buf_in[1]) {
         case ACP_CMD_GET_FTS:
-            // getTemperature(&device_list, interval, &tmr);
             switch (buf_in[0]) {
                 case ACP_QUANTIFIER_BROADCAST:
                     for (i = 0; i < device_list.length; i++) {
-                        getTemperature1(&device_list.item[i]);
+                        getTemperature(&device_list.item[i]);
                         if (!catFTS(&device_list.item[i], buf_out, sock_buf_size)) {
                             return;
                         }
@@ -197,7 +195,7 @@ void serverRun(int *state, int init_state) {
                     for (i = 0; i < i1l.length; i++) {
                         Device *device = getDeviceById(i1l.item[i], &device_list);
                         if (device != NULL) {
-                            getTemperature1(device);
+                            getTemperature(device);
                             if (!catFTS(device, buf_out, sock_buf_size)) {
                                 return;
                             }
@@ -218,6 +216,9 @@ void serverRun(int *state, int init_state) {
 }
 
 void initApp() {
+#ifdef MODE_DEBUG
+    printf("initApp: \n\tCONFIG_FILE: %s, \n\tDEVICE_FILE: %s\n", CONFIG_FILE, DEVICE_FILE);
+#endif
     if (!readSettings()) {
         exit_nicely_e("initApp: failed to read settings\n");
     }
@@ -232,14 +233,6 @@ void initApp() {
     if (!gpioSetup()) {
         exit_nicely_e("initApp: failed to initialize GPIO\n");
     }
-#endif
-#ifdef MODE_DEBUG
-    printf("initApp: PID: %d\n", proc_id);
-    printf("initApp: sock_port: %d\n", sock_port);
-    printf("initApp: sock_buf_size: %d\n", sock_buf_size);
-    printf("initApp: pid_path: %s\n", pid_path);
-    printf("initApp: CONFIG_FILE: %s\n", CONFIG_FILE);
-    printf("initApp: DEVICE_FILE: %s\n", DEVICE_FILE);
 #endif
 }
 
@@ -258,20 +251,10 @@ int initData() {
         return 0;
     }
 #ifndef PLATFORM_ANY
-    /*
-        size_t i;
-        int miso[device_list.length];
-        for (i = 0; i < device_list.length; i++) {
-            miso[i] = device_list.item[i].miso;
-        }
-        max6675_so_init(device_list.item[0].sclk, device_list.item[0].cs, miso, (int) device_list.length);
-     */
-
-    int i;
+    size_t i;
     for (i = 0; i < device_list.length; i++) {
         max6675_init(device_list.item[i].sclk, device_list.item[i].cs, device_list.item[i].miso);
     }
-
 #endif
     tmr.ready = 0;
     return 1;
