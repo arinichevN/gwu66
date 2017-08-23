@@ -12,9 +12,9 @@ DEBUG_PARAM="-Wall -pedantic"
 MODE_DEBUG=-DMODE_DEBUG
 MODE_FULL=-DMODE_FULL
 
-#CPU=-DCPU_ANY
+CPU=-DCPU_ANY
 #CPU=-DCPU_ALLWINNER_A20
-CPU=-DCPU_ALLWINNER_H3
+#CPU=-DCPU_ALLWINNER_H3
 #CPU=-DCPU_CORTEX_A5
 
 PINOUT=-DPINOUT1
@@ -61,7 +61,6 @@ function build_lib {
 	gcc $1 $CPU -c app.c -D_REENTRANT $DEBUG_PARAM -pthread && \
 	gcc $1 $CPU -c crc.c $DEBUG_PARAM && \
 	gcc $1 $CPU $PINOUT -c gpio.c $DEBUG_PARAM && \
-	gcc $1 $CPU -c 1w.c $DEBUG_PARAM && \
 	gcc $1 $CPU -c timef.c $DEBUG_PARAM && \
 	gcc $1 $CPU -c $SOCK.c $DEBUG_PARAM && \
 	gcc $1 $CPU -c util.c $DEBUG_PARAM && \
@@ -72,7 +71,7 @@ function build_lib {
 	cd ../ && \
 	echo "library: making archive..." && \
 	rm -f libpac.a
-	ar -crv libpac.a 1w.o app.o crc.o gpio.o timef.o $SOCK.o util.o max6675.o acp/main.o && echo "library: done"
+	ar -crv libpac.a app.o crc.o gpio.o timef.o $SOCK.o util.o max6675.o acp/main.o && echo "library: done"
 	rm -f *.o acp/*.o
 }
 #    1         2

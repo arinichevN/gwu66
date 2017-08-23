@@ -18,22 +18,28 @@ int deviceIdExists(int id) {
 
     return 1;
 }
-
+void lcorrect(Device *item){
+    if(item->lcorrection.active){
+        item->value=item->value*item->lcorrection.factor + item->lcorrection.delta;
+    }
+}
 void getTemperature(Device *item) {
-    //item->value_state = 0;
-#ifndef PLATFORM_ANY
+    item->value_state = 0;
+#ifndef CPU_ANY
     printf("reading: id:%d sclk:%d cs:%d so:%d\n", item->id, item->sclk, item->cs, item->miso);
     if (max6675_read(&item->value, item->sclk, item->cs, item->miso)) {
         item->tm = getCurrentTime();
         item->value_state = 1;
+                    lcorrect(item);
         return;
     }
 
 #endif
-#ifdef PLATFORM_ANY
+#ifdef CPU_ANY
     item->value = 0.0f;
     item->tm = getCurrentTime();
     item->value_state = 1;
+    lcorrect(item);
     return;
 #endif
 }

@@ -1,12 +1,10 @@
 
-#ifndef GWU18_H
-#define GWU18_H
+#ifndef GWU66_H
+#define GWU66_H
 
 #include "lib/app.h"
 
-#ifndef PLATFORM_ANY
 #include "lib/gpio.h"
-#endif
 
 #include "lib/max6675.h"
 
@@ -31,6 +29,7 @@
 
 #define DEVICE_FILE "" CONF_DIR "device.tsv"
 #define CONFIG_FILE "" CONF_DIR "config.tsv"
+#define LCORRECTION_FILE "" CONF_DIR "lcorrection.tsv"
 
 #define FLOAT_NUM "%.2f"
 
@@ -43,6 +42,12 @@ enum {
 } StateAPP;
 
 typedef struct {
+    int active;
+    float factor;
+    float delta;
+} LCORRECTION;
+
+typedef struct {
     int id;
     int sclk;
     int cs;
@@ -50,6 +55,7 @@ typedef struct {
     struct timespec tm;
     float value;
     int value_state; //0 if reading value from device failed
+       LCORRECTION lcorrection;
 } Device;
 
 DEF_LIST(Device)

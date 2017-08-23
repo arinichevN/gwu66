@@ -25,16 +25,9 @@ Ton_ts tmr = {.ready = 0};
 #include "init_f.c"
 
 
-#ifdef PLATFORM_ANY
-#pragma message("MESSAGE: building for all platforms")
-#else
-#pragma message("MESSAGE: building for certain platform")
-#endif
-
 int checkDevice(DeviceList *dl) {
     size_t i, j;
     //valid pin address
-#ifndef PLATFORM_ANY
     for (i = 0; i < dl->length; i++) {
         if (!checkPin(dl->item[i].sclk)) {
             fprintf(stderr, "checkDevice: check device table: bad sclk=%d where id=%d\n", dl->item[i].sclk, dl->item[i].id);
@@ -49,7 +42,6 @@ int checkDevice(DeviceList *dl) {
             return 0;
         }
     }
-#endif
     //same sclk
     /*
         int pin, f;
@@ -229,11 +221,9 @@ void initApp() {
     if (!initServer(&sock_fd, sock_port)) {
         exit_nicely_e("initApp: failed to initialize socket server\n");
     }
-#ifndef PLATFORM_ANY
     if (!gpioSetup()) {
         exit_nicely_e("initApp: failed to initialize GPIO\n");
     }
-#endif
 }
 
 int initData() {
@@ -245,12 +235,15 @@ int initData() {
         FREE_LIST(&device_list);
         return 0;
     }
+        if(!initDeviceLCorrection(&device_list)){
+        ;
+    }
     i1l.item = (int *) malloc(sock_buf_size * sizeof *(i1l.item));
     if (i1l.item == NULL) {
         FREE_LIST(&device_list);
         return 0;
     }
-#ifndef PLATFORM_ANY
+#ifndef CPU_ANY
     size_t i;
     for (i = 0; i < device_list.length; i++) {
         max6675_init(device_list.item[i].sclk, device_list.item[i].cs, device_list.item[i].miso);
@@ -267,9 +260,6 @@ void freeData() {
 
 void freeApp() {
     freeData();
-#ifndef PLATFORM_ANY
-    gpioFree();
-#endif
     freeSocketFd(&sock_fd);
     freePid(&pid_file, &proc_id, pid_path);
 }
