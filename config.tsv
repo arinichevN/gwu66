@@ -1,2 +1,2 @@
-port	PID_path	socket_buffer_size
-49165	/var/run/gwu66.pid	508
+port	PID_path
+49166	/var/run/gwu66.pid

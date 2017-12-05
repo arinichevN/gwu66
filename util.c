@@ -44,33 +44,6 @@ void getTemperature(Device *item) {
 #endif
 }
 
-int sendStrPack(char qnf, char *cmd) {
-    extern Peer peer_client;
-    return acp_sendStrPack(qnf, cmd, &peer_client);
-}
-
-int sendBufPack(char *buf, char qnf, char *cmd_str) {
-    extern Peer peer_client;
-    return acp_sendBufPack(buf, qnf, cmd_str, &peer_client);
-}
-
-void sendStr(const char *s, uint8_t *crc) {
-    acp_sendStr(s, crc, &peer_client);
-}
-
-void sendFooter(int8_t crc) {
-    acp_sendFooter(crc, &peer_client);
-}
-
-int catFTS(Device *item, char *buf, size_t buf_size) {
-    char q[LINE_SIZE];
-    snprintf(q, sizeof q, "%d" ACP_DELIMITER_COLUMN_STR FLOAT_NUM ACP_DELIMITER_COLUMN_STR "%ld" ACP_DELIMITER_COLUMN_STR "%ld" ACP_DELIMITER_COLUMN_STR "%d" ACP_DELIMITER_ROW_STR, item->id, item->value, item->tm.tv_sec, item->tm.tv_nsec, item->value_state);
-    if (bufCat(buf, q, buf_size) == NULL) {
-        sendStrPack(ACP_QUANTIFIER_BROADCAST, ACP_RESP_BUF_OVERFLOW);
-#ifdef MODE_DEBUG
-        fputs("catFTS: failure\n", stderr);
-#endif
-        return 0;
-    }
-    return 1;
+int catFTS(Device *item, ACPResponse *response) {
+    return acp_responseFTSCat(item->id, item->value, item->tm, item->value_state, response);
 }

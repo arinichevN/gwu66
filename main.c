@@ -10,7 +10,6 @@ int pid_file = -1;
 int proc_id = -1;
 int sock_port = -1;
 int sock_fd = -1; //socket file descriptor
-size_t sock_buf_size = 0;
 Peer peer_client = {.fd = &sock_fd, .addr_size = sizeof peer_client.addr};
 
 DeviceList device_list = {NULL, 0};
@@ -93,118 +92,24 @@ int checkDevice(DeviceList *dl) {
 }
 
 void serverRun(int *state, int init_state) {
-    char buf_in[sock_buf_size];
-    char buf_out[sock_buf_size];
-    size_t i;
-    memset(buf_in, 0, sizeof buf_in);
-    acp_initBuf(buf_out, sizeof buf_out);
-    if (recvfrom(sock_fd, (void *) buf_in, sizeof buf_in, 0, (struct sockaddr*) (&(peer_client.addr)), &(peer_client.addr_size)) < 0) {
-#ifdef MODE_DEBUG
-        perror("serverRun: recvfrom() error");
-#endif
-        return;
-    }
-#ifdef MODE_DEBUG
-    acp_dumpBuf(buf_in, sizeof buf_in);
-#endif    
-    if (!acp_crc_check(buf_in, sizeof buf_in)) {
-#ifdef MODE_DEBUG
-        fputs("WARNING: serverRun: crc check failed\n", stderr);
-#endif
-        return;
-    }
-    switch (buf_in[1]) {
-        case ACP_CMD_APP_START:
-            if (!init_state) {
-                *state = APP_INIT_DATA;
+    SERVER_HEADER
+    SERVER_APP_ACTIONS
+    if (ACP_CMD_IS(ACP_CMD_GET_FTS)) {
+        acp_requestDataToI1List(&request, &i1l, device_list.length); //id
+        if (i1l.length <= 0) {
+            return;
+        }
+        for (int i = 0; i < i1l.length; i++) {
+            Device *device = getDeviceById(i1l.item[i], &device_list);
+            if (device != NULL) {
+                getTemperature(device);
+                if (!catFTS(device, &response)) {
+                    return;
+                }
             }
-            return;
-        case ACP_CMD_APP_STOP:
-            if (init_state) {
-                *state = APP_STOP;
-            }
-            return;
-        case ACP_CMD_APP_RESET:
-            *state = APP_RESET;
-            return;
-        case ACP_CMD_APP_EXIT:
-            *state = APP_EXIT;
-            return;
-        case ACP_CMD_APP_PING:
-            if (init_state) {
-                sendStrPack(ACP_QUANTIFIER_BROADCAST, ACP_RESP_APP_BUSY);
-            } else {
-                sendStrPack(ACP_QUANTIFIER_BROADCAST, ACP_RESP_APP_IDLE);
-            }
-            return;
-        case ACP_CMD_APP_PRINT:
-            printData(&device_list);
-            return;
-        case ACP_CMD_APP_HELP:
-            printHelp();
-            return;
-        default:
-            if (!init_state) {
-                return;
-            }
-            break;
+        }
     }
-    switch (buf_in[0]) {
-        case ACP_QUANTIFIER_BROADCAST:
-        case ACP_QUANTIFIER_SPECIFIC:
-            break;
-        default:
-            return;
-    }
-    switch (buf_in[1]) {
-        case ACP_CMD_GET_FTS:
-            switch (buf_in[0]) {
-                case ACP_QUANTIFIER_BROADCAST:
-                    break;
-                case ACP_QUANTIFIER_SPECIFIC:
-                    acp_parsePackI1(buf_in, &i1l, sock_buf_size); //id
-                    if (i1l.length <= 0) {
-                        return;
-                    }
-                    break;
-            }
-            break;
-        default:
-            return;
-    }
-    switch (buf_in[1]) {
-        case ACP_CMD_GET_FTS:
-            switch (buf_in[0]) {
-                case ACP_QUANTIFIER_BROADCAST:
-                    for (i = 0; i < device_list.length; i++) {
-                        getTemperature(&device_list.item[i]);
-                        if (!catFTS(&device_list.item[i], buf_out, sock_buf_size)) {
-                            return;
-                        }
-                    }
-                    break;
-                case ACP_QUANTIFIER_SPECIFIC:
-                    for (i = 0; i < i1l.length; i++) {
-                        Device *device = getDeviceById(i1l.item[i], &device_list);
-                        if (device != NULL) {
-                            getTemperature(device);
-                            if (!catFTS(device, buf_out, sock_buf_size)) {
-                                return;
-                            }
-                        }
-                    }
-                    break;
-            }
-            break;
-    }
-    switch (buf_in[1]) {
-        case ACP_CMD_GET_FTS:
-            if (!sendBufPack(buf_out, ACP_QUANTIFIER_SPECIFIC, ACP_RESP_REQUEST_SUCCEEDED)) {
-                sendStrPack(ACP_QUANTIFIER_BROADCAST, ACP_RESP_BUF_OVERFLOW);
-                return;
-            }
-            return;
-    }
+    acp_responseSend(&response, &peer_client);
 }
 
 void initApp() {
@@ -214,7 +119,6 @@ void initApp() {
     if (!readSettings()) {
         exit_nicely_e("initApp: failed to read settings\n");
     }
-    peer_client.sock_buf_size = sock_buf_size;
     if (!initPid(&pid_file, &proc_id, pid_path)) {
         exit_nicely_e("initApp: failed to initialize pid\n");
     }
@@ -238,8 +142,7 @@ int initData() {
         if(!initDeviceLCorrection(&device_list)){
         ;
     }
-    i1l.item = (int *) malloc(sock_buf_size * sizeof *(i1l.item));
-    if (i1l.item == NULL) {
+    if (!initI1List(&i1l, device_list.length)) {
         FREE_LIST(&device_list);
         return 0;
     }

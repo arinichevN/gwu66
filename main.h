@@ -3,13 +3,9 @@
 #define GWU66_H
 
 #include "lib/app.h"
-
 #include "lib/gpio.h"
-
 #include "lib/max6675.h"
-
 #include "lib/timef.h"
-
 #include "lib/acp/main.h"
 #include "lib/acp/app.h"
 #include "lib/udp.h"
@@ -32,6 +28,7 @@
 #define LCORRECTION_FILE "" CONF_DIR "lcorrection.tsv"
 
 #define FLOAT_NUM "%.2f"
+
 
 enum {
     ON = 1,
