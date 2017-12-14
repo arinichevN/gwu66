@@ -13,8 +13,6 @@
 
 #define APP_NAME gwu66
 #define APP_NAME_STR TOSTRING(APP_NAME)
-#define ID_BROADCAST 0xff
-//#define RETRY_NUM 5
 
 #ifdef MODE_FULL
 #define CONF_DIR "/etc/controller/" APP_NAME_STR "/"
@@ -26,9 +24,6 @@
 #define DEVICE_FILE "" CONF_DIR "device.tsv"
 #define CONFIG_FILE "" CONF_DIR "config.tsv"
 #define LCORRECTION_FILE "" CONF_DIR "lcorrection.tsv"
-
-#define FLOAT_NUM "%.2f"
-
 
 enum {
     ON = 1,
