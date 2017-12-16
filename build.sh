@@ -12,13 +12,8 @@ DEBUG_PARAM="-Wall -pedantic"
 MODE_DEBUG=-DMODE_DEBUG
 MODE_FULL=-DMODE_FULL
 
-CPU=-DCPU_ANY
-#CPU=-DCPU_ALLWINNER_A20
-#CPU=-DCPU_ALLWINNER_H3
-#CPU=-DCPU_CORTEX_A5
-
-PINOUT=-DPINOUT1
-#PINOUT=-DPINOUT2
+source lib/gpio/cpu.sh
+source lib/gpio/pinout.sh
 
 NONE=-DNONEANDNOTHINE
 
@@ -72,7 +67,7 @@ function build_lib {
 	cd ../ && \
 	echo "library: making archive..." && \
 	rm -f libpac.a
-	ar -crv libpac.a app.o crc.o gpio.o timef.o $SOCK.o util.o max6675.o acp/main.o && echo "library: done"
+	ar -crv libpac.a app.o crc.o gpio.o timef.o $SOCK.o util.o max6675.o acp/main.o && echo "library: done" && echo "hardware: $CPU $PINOUT"
 	rm -f *.o acp/*.o
 }
 #    1         2
