@@ -50,7 +50,7 @@ typedef struct {
        LCORRECTION lcorrection;
 } Device;
 
-DEF_LIST(Device)
+DEC_LIST(Device)
 
 
 extern int readSettings();

@@ -1,7 +1,3 @@
-/*
- * UPD gateway for MAX6675
- */
-
 #include "main.h"
 
 char pid_path[LINE_SIZE];
@@ -14,7 +10,7 @@ Peer peer_client = {.fd = &sock_fd, .addr_size = sizeof peer_client.addr};
 
 DeviceList device_list = {NULL, 0};
 
-I1List i1l = {NULL, 0};
+I1List i1l;
 
 struct timespec interval = {.tv_sec = 0, .tv_nsec = 200000000};
 Ton_ts tmr = {.ready = 0};
@@ -95,7 +91,7 @@ void serverRun(int *state, int init_state) {
     SERVER_HEADER
     SERVER_APP_ACTIONS
     if (ACP_CMD_IS(ACP_CMD_GET_FTS)) {
-        acp_requestDataToI1List(&request, &i1l, device_list.length); //id
+        acp_requestDataToI1List(&request, &i1l); //id
         if (i1l.length <= 0) {
             return;
         }
