@@ -1,16 +1,11 @@
 #include "main.h"
 
-char pid_path[LINE_SIZE];
 int app_state = APP_INIT;
-int pid_file = -1;
-int proc_id = -1;
 int sock_port = -1;
 int sock_fd = -1; //socket file descriptor
 Peer peer_client = {.fd = &sock_fd, .addr_size = sizeof peer_client.addr};
 
 DeviceList device_list = {NULL, 0};
-
-I1List i1l;
 
 struct timespec interval = {.tv_sec = 0, .tv_nsec = 200000000};
 Ton_ts tmr = {.ready = 0};
@@ -19,21 +14,20 @@ Ton_ts tmr = {.ready = 0};
 #include "print.c"
 #include "init_f.c"
 
-
-int checkDevice(DeviceList *dl) {
-    size_t i, j;
+int checkDevice(DeviceList *list) {
     //valid pin address
-    for (i = 0; i < dl->length; i++) {
-        if (!checkPin(dl->item[i].sclk)) {
-            fprintf(stderr, "checkDevice: check device table: bad sclk=%d where id=%d\n", dl->item[i].sclk, dl->item[i].id);
+
+    FORLIST(i) {
+        if (!checkPin(LIi.sclk)) {
+            fprintf(stderr, "%s(): check device table: bad sclk=%d where id=%d\n", F, LIi.sclk, LIi.id);
             return 0;
         }
-        if (!checkPin(dl->item[i].cs)) {
-            fprintf(stderr, "checkDevice: check device table: bad cs=%d where id=%d\n", dl->item[i].cs, dl->item[i].id);
+        if (!checkPin(LIi.cs)) {
+            fprintf(stderr, "%s(): check device table: bad cs=%d where id=%d\n", F, LIi.cs, LIi.id);
             return 0;
         }
-        if (!checkPin(dl->item[i].miso)) {
-            fprintf(stderr, "checkDevice: check device table: bad miso=%d where id=%d\n", dl->item[i].miso, dl->item[i].id);
+        if (!checkPin(LIi.miso)) {
+            fprintf(stderr, "%s(): check device table: bad miso=%d where id=%d\n", F, LIi.miso, LIi.id);
             return 0;
         }
     }
@@ -41,45 +35,46 @@ int checkDevice(DeviceList *dl) {
     /*
         int pin, f;
         f = 0;
-        for (i = 0; i < dl->length; i++) {
+        FORLIST(i) {
             if (!f) {
-                pin = dl->item[i].sclk;
+                pin = LIi.sclk;
                 f = 1;
             }
-            if (pin != dl->item[i].sclk) {
-                fprintf(stderr, "checkDevice: the same sclk pin expected where id=%d\n", dl->item[i].id);
+            if (pin != LIi.sclk) {
+                fprintf(stderr, "%s(): the same sclk pin expected where id=%d\n",F, LIi.id);
                 return 0;
             }
         }
         //same miso
         f = 0;
-        for (i = 0; i < dl->length; i++) {
+        FORLIST(i) {
             if (!f) {
-                pin = dl->item[i].miso;
+                pin = LIi.miso;
                 f = 1;
             }
-            if (pin != dl->item[i].miso) {
-                fprintf(stderr, "checkDevice: the same cs pin expected where id=%d\n", dl->item[i].id);
+            if (pin != LIi.miso) {
+                fprintf(stderr, "%s(): the same cs pin expected where id=%d\n",F, LIi.id);
                 return 0;
             }
         }
      */
     //unique cs
     /*
-        for (i = 0; i < dl->length; i++) {
-            for (j = i + 1; j < dl->length; j++) {
-                if (dl->item[i].cs == dl->item[j].cs) {
-                    fprintf(stderr, "checkDevice: check device table: cs should be unique, repetition found where id=%d\n", dl->item[i].id);
+        FORLIST(i) {
+            for (size_t j = i + 1; j < list->length; j++) {
+                if (LIi.cs == list->item[j].cs) {
+                    fprintf(stderr, "%s(): check device table: cs should be unique, repetition found where id=%d\n",F, LIi.id);
                     return 0;
                 }
             }
         }
      */
     //unique id
-    for (i = 0; i < dl->length; i++) {
-        for (j = i + 1; j < dl->length; j++) {
-            if (dl->item[i].id == dl->item[j].id) {
-                fprintf(stderr, "checkDevice: check device table: ids should be unique, repetition found where id=%d\n", dl->item[i].id);
+
+    FORLIST(i) {
+        for (size_t j = i + 1; j < list->length; j++) {
+            if (LIi.id == LIj.id) {
+                fprintf(stderr, "%s(): check device table: ids should be unique, repetition found where id=%d\n", F, LIi.id);
                 return 0;
             }
         }
@@ -90,6 +85,7 @@ int checkDevice(DeviceList *dl) {
 void serverRun(int *state, int init_state) {
     SERVER_HEADER
     SERVER_APP_ACTIONS
+    DEF_SERVER_I1LIST
     if (ACP_CMD_IS(ACP_CMD_GET_FTS)) {
         acp_requestDataToI1List(&request, &i1l); //id
         if (i1l.length <= 0) {
@@ -115,9 +111,6 @@ void initApp() {
     if (!readSettings()) {
         exit_nicely_e("initApp: failed to read settings\n");
     }
-    if (!initPid(&pid_file, &proc_id, pid_path)) {
-        exit_nicely_e("initApp: failed to initialize pid\n");
-    }
     if (!initServer(&sock_fd, sock_port)) {
         exit_nicely_e("initApp: failed to initialize socket server\n");
     }
@@ -135,16 +128,11 @@ int initData() {
         FREE_LIST(&device_list);
         return 0;
     }
-        if(!initDeviceLCorrection(&device_list)){
+    if (!initDeviceLCorrection(&device_list)) {
         ;
     }
-    if (!initI1List(&i1l, device_list.length)) {
-        FREE_LIST(&device_list);
-        return 0;
-    }
 #ifndef CPU_ANY
-    size_t i;
-    for (i = 0; i < device_list.length; i++) {
+    for(size_t i = 0; i < device_list.length; i++) {
         max6675_init(device_list.item[i].sclk, device_list.item[i].cs, device_list.item[i].miso);
     }
 #endif
@@ -153,14 +141,12 @@ int initData() {
 }
 
 void freeData() {
-    FREE_LIST(&i1l);
     FREE_LIST(&device_list);
 }
 
 void freeApp() {
     freeData();
     freeSocketFd(&sock_fd);
-    freePid(&pid_file, &proc_id, pid_path);
 }
 
 void exit_nicely() {
@@ -196,47 +182,32 @@ int main(int argc, char** argv) {
     //#endif
     int data_initialized = 0;
     while (1) {
+#ifdef MODE_DEBUG
+        printf("%s(): %s %d\n",F, getAppState(app_state), data_initialized);
+#endif
         switch (app_state) {
             case APP_INIT:
-#ifdef MODE_DEBUG
-                puts("MAIN: init");
-#endif
                 initApp();
                 app_state = APP_INIT_DATA;
                 break;
             case APP_INIT_DATA:
-#ifdef MODE_DEBUG
-                puts("MAIN: init data");
-#endif
                 data_initialized = initData();
                 app_state = APP_RUN;
                 break;
             case APP_RUN:
-#ifdef MODE_DEBUG
-                puts("MAIN: run");
-#endif
                 serverRun(&app_state, data_initialized);
                 break;
             case APP_STOP:
-#ifdef MODE_DEBUG
-                puts("MAIN: stop");
-#endif
                 freeData();
                 data_initialized = 0;
                 app_state = APP_RUN;
                 break;
             case APP_RESET:
-#ifdef MODE_DEBUG
-                puts("MAIN: reset");
-#endif
                 freeApp();
                 data_initialized = 0;
                 app_state = APP_INIT;
                 break;
             case APP_EXIT:
-#ifdef MODE_DEBUG
-                puts("MAIN: exit");
-#endif
                 exit_nicely();
                 break;
             default:

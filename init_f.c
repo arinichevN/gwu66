@@ -4,23 +4,24 @@ int readSettings() {
     FILE* stream = fopen(CONFIG_FILE, "r");
     if (stream == NULL) {
 #ifdef MODE_DEBUG
-        perror("readSettings()");
+        fprintf(stderr, "%s()", F);
+        perror("");
 #endif
         return 0;
     }
-skipLine(stream);
+    skipLine(stream);
     int n;
-    n = fscanf(stream, "%d\t%255s\n", &sock_port, pid_path);
-    if (n != 2) {
+    n = fscanf(stream, "%d\n", &sock_port);
+    if (n != 1) {
         fclose(stream);
 #ifdef MODE_DEBUG
-        fputs("ERROR: readSettings: bad row format\n", stderr);
+        fprintf(stderr, "%s(): bad row format\n", F);
 #endif
         return 0;
     }
     fclose(stream);
 #ifdef MODE_DEBUG
-    printf("readSettings: \n\tsock_port: %d, \n\tpid_path: %s\n", sock_port, pid_path);
+    printf("%s(): \n\tsock_port: %d\n", F, sock_port);
 #endif
     return 1;
 }
@@ -32,7 +33,8 @@ int initDevice(DeviceList *list) {
     FILE* stream = fopen(DEVICE_FILE, "r");
     if (stream == NULL) {
 #ifdef MODE_DEBUG
-        fputs("ERROR: initDevice: fopen\n", stderr);
+        fprintf(stderr, "%s()", F);
+        perror("");
 #endif
         return 0;
     }
@@ -54,18 +56,14 @@ int initDevice(DeviceList *list) {
         if (list->item == NULL) {
             list->length = 0;
 #ifdef MODE_DEBUG
-            fputs("ERROR: initDevice: failed to allocate memory for pins\n", stderr);
+            fprintf(stderr,"%s(): failed to allocate memory for device\n", F);
 #endif
             fclose(stream);
             return 0;
         }
         skipLine(stream);
         int done = 1;
-        size_t i;
-#ifdef MODE_DEBUG
-        puts("initDevice: read:");
-#endif
-        FORL{
+        FORLIST(i){
             int n;
             n = fscanf(stream, DEVICE_ROW_FORMAT,
             &LIi.id,
@@ -85,7 +83,7 @@ int initDevice(DeviceList *list) {
             FREE_LIST(list);
             fclose(stream);
 #ifdef MODE_DEBUG
-            fputs("ERROR: initDevice: failure while reading rows\n", stderr);
+            fprintf(stderr,"%s(): failure while reading rows\n", F);
 #endif
             return 0;
         }
@@ -95,9 +93,8 @@ int initDevice(DeviceList *list) {
 }
 
 int initDeviceLCorrection(DeviceList *list) {
-    int i;
-    FORL{
-        LIi.lcorrection.active=0;
+    FORLIST(i){
+        LIi.lcorrection.active = 0;
     }
     FILE* stream = fopen(LCORRECTION_FILE, "r");
     if (stream == NULL) {
@@ -114,15 +111,15 @@ int initDeviceLCorrection(DeviceList *list) {
         if (n != 3) {
             break;
         }
-        Device * item=getDeviceById(device_id, list);
-        if(item==NULL){
+        Device * item = getDeviceById(device_id, list);
+        if (item == NULL) {
             break;
         }
-        item->lcorrection.active=1;
-        item->lcorrection.factor=factor;
-        item->lcorrection.delta=delta;
+        item->lcorrection.active = 1;
+        item->lcorrection.factor = factor;
+        item->lcorrection.delta = delta;
 #ifdef MODE_DEBUG
-        printf("initDeviceLCorrection: device_id = %d, factor = %f, delta = %f\n", device_id, factor, delta);
+        printf("%s(): device_id = %d, factor = %f, delta = %f\n",F, device_id, factor, delta);
 #endif
 
     }
