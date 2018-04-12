@@ -147,6 +147,7 @@ void freeData() {
 void freeApp() {
     freeData();
     freeSocketFd(&sock_fd);
+    gpioFree();
 }
 
 void exit_nicely() {
