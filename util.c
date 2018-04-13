@@ -19,7 +19,7 @@ int deviceIdExists(int id) {
     return 1;
 }
 
-void lcorrect(Device *item) {
+void llcorrect(Device *item) {
     if (item->lcorrection.active) {
         item->value = item->value * item->lcorrection.factor + item->lcorrection.delta;
     }
@@ -31,7 +31,7 @@ void getTemperature(Device *item) {
     item->value = 0.0f;
     item->tm = getCurrentTime();
     item->value_state = 1;
-    lcorrect(item);
+    llcorrect(item);
     return;
 #endif
 
@@ -39,7 +39,7 @@ void getTemperature(Device *item) {
     if (max6675_read(&item->value, item->sclk, item->cs, item->miso)) {
         item->tm = getCurrentTime();
         item->value_state = 1;
-        lcorrect(item);
+        llcorrect(item);
         return;
     }
 

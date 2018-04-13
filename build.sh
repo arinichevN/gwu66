@@ -60,14 +60,15 @@ function build_lib {
 	gcc $1 $CPU -c timef.c -D_REENTRANT $DEBUG_PARAM -pthread && \
 	gcc $1 $CPU -c $SOCK.c -D_REENTRANT $DEBUG_PARAM -pthread && \
 	gcc $1 $CPU -c util.c -D_REENTRANT $DEBUG_PARAM -pthread && \
+	cd device && \
 	gcc $1 $CPU -c max6675.c -D_REENTRANT $DEBUG_PARAM -pthread && \
-	
+	cd ../ && \
 	cd acp && \
 	gcc $1 $CPU -c main.c -D_REENTRANT $DEBUG_PARAM -pthread && \
 	cd ../ && \
 	echo "library: making archive..." && \
 	rm -f libpac.a
-	ar -crv libpac.a app.o crc.o gpio.o timef.o $SOCK.o util.o max6675.o acp/main.o && echo "library: done" && echo "hardware: $CPU $PINOUT"
+	ar -crv libpac.a app.o crc.o gpio.o timef.o $SOCK.o util.o device/max6675.o acp/main.o && echo "library: done" && echo "hardware: $CPU $PINOUT"
 	rm -f *.o acp/*.o
 }
 #    1         2

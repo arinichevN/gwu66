@@ -4,7 +4,7 @@
 
 #include "lib/app.h"
 #include "lib/gpio.h"
-#include "lib/max6675.h"
+#include "lib/device/max6675.h"
 #include "lib/timef.h"
 #include "lib/acp/main.h"
 #include "lib/acp/app.h"
